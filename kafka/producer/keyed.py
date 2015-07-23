@@ -7,6 +7,8 @@ from .base import Producer
 from ..partitioner import HashedPartitioner
 from ..util import kafka_bytestring
 
+from collections import defaultdict
+
 
 log = logging.getLogger(__name__)
 
@@ -36,6 +38,25 @@ class KeyedProducer(Producer):
 
         partitioner = self.partitioners[topic]
         return partitioner.partition(key)
+
+    def send_messages_with_keys(self, topic, *msg):
+        """ Given a list of single key dictionaries, use the keys as the `key`
+            and value as the `message` for sending messages. """
+
+        msg_grouping = defaultdict(list)
+        for m in msg:
+            if isinstance(m, tuple):
+                k, v = m
+            elif isinstance(m, dict):
+                k, v = m.items()[0]
+            else:
+                raise TypeError("all msgs must be a tuple eg (key, msg) or dict eg {key: msg}")
+
+            msg_grouping[k].append(v)
+
+        for key, message in msg_grouping.items():
+            partition = self._next_partition(topic, key)
+            return self._send_messages(topic, partition, *message, key=key)
 
     def send_messages(self, topic, key, *msg):
         topic = kafka_bytestring(topic)
