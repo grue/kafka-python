@@ -54,14 +54,15 @@ class KafkaConnection(local):
         timeout: default 120. The socket timeout for sending and receiving data
             in seconds. None means no timeout, so a request can block forever.
     """
-    def __init__(self, host, port, timeout=DEFAULT_SOCKET_TIMEOUT_SECONDS):
+    def __init__(self, host, port, timeout=DEFAULT_SOCKET_TIMEOUT_SECONDS, activate=True):
         super(KafkaConnection, self).__init__()
         self.host = host
         self.port = port
         self.timeout = timeout
         self._sock = None
 
-        self.reinit()
+        if activate:
+            self.reinit()
 
     def __getnewargs__(self):
         return (self.host, self.port, self.timeout)
@@ -167,12 +168,13 @@ class KafkaConnection(local):
         The returned copy is not connected; you must call reinit() before
         using.
         """
-        c = copy.deepcopy(self)
+        #c = copy.deepcopy(self)
         # Python 3 doesn't copy custom attributes of the threadlocal subclass
-        c.host = copy.copy(self.host)
-        c.port = copy.copy(self.port)
-        c.timeout = copy.copy(self.timeout)
-        c._sock = None
+        #c.host = copy.copy(self.host)
+        #c.port = copy.copy(self.port)
+        #c.timeout = copy.copy(self.timeout)
+        #c._sock = None
+        c = KafkaConnection(host=self.host, port=self.port, timeout=self.timeout, activate=False)
         return c
 
     def close(self):

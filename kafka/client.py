@@ -28,6 +28,7 @@ class KafkaClient(object):
     # socket timeout.
     def __init__(self, hosts, client_id=CLIENT_ID,
                  timeout=DEFAULT_SOCKET_TIMEOUT_SECONDS,
+                 activate=True,
                  correlation_id=0):
         # We need one connection to bootstrap
         self.client_id = kafka_bytestring(client_id)
@@ -41,8 +42,9 @@ class KafkaClient(object):
         self.topics_to_brokers = {}  # TopicAndPartition -> BrokerMetadata
         self.topic_partitions = {}   # topic -> partition -> PartitionMetadata
 
-        self.load_metadata_for_topics()  # bootstrap with all metadata
-
+	if activate:
+            self.load_metadata_for_topics()  # bootstrap with all metadata
+	
 
     ##################
     #   Private API  #
@@ -271,9 +273,17 @@ class KafkaClient(object):
         Note that the copied connections are not initialized, so reinit() must
         be called on the returned copy.
         """
-        c = copy.deepcopy(self)
-        for key in c.conns:
-            c.conns[key] = self.conns[key].copy()
+        #c = copy.deepcopy(self)
+        #for key in c.conns:
+        #    c.conns[key] = self.conns[key].copy()
+        #return c
+        c = KafkaClient(hosts=['{0}:{1}'.format(entry[0], entry[1]) for entry in self.hosts],
+                        client_id=self.client_id,
+                        timeout=self.timeout,
+                        correlation_id=self.correlation_id,
+                        activate=False)
+        for k, v in self.conns.iteritems():
+            c.conns[k] = v.copy()
         return c
 
     def reinit(self):
