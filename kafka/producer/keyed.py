@@ -54,9 +54,14 @@ class KeyedProducer(Producer):
 
             msg_grouping[k].append(v)
 
+        # collect all responses for each request and send back as a list
+        responses = []
+
         for key, message in msg_grouping.items():
             partition = self._next_partition(topic, key)
-            return self._send_messages(topic, partition, *message, key=key)
+            responses.append(self._send_messages(topic, partition, *message, key=key))
+
+        return responses
 
     def send_messages(self, topic, key, *msg):
         topic = kafka_bytestring(topic)
